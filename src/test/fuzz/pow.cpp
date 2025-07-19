@@ -2,6 +2,10 @@
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
+// BT2C: These fuzz tests are kept for reference but are expected to fail
+// since BT2C is a PoS-only blockchain and PoW functionality has been disabled.
+// CheckProofOfWork always returns false in BT2C.
+
 #include <chain.h>
 #include <chainparams.h>
 #include <pow.h>

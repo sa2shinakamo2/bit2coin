@@ -14,6 +14,7 @@
 #include <validation.h>
 #include <random.h>
 #include <script/interpreter.h>
+#include <validator.h>
 
 #include <index/txindex.h>
 
@@ -776,5 +777,150 @@ unsigned int GetStakeEntropyBit(const CBlock& block)
             LogPrintf(" entropybit=%d\n", nEntropyBit);
     }
     return nEntropyBit;
+}
+
+// bit2coin: check if validator meets minimum stake requirement
+bool CheckValidatorMinimumStake(const CTransactionRef& tx, const CAmount& minStake)
+{
+    // The minimum stake requirement for validators is 32 BTC
+    CAmount totalStake = 0;
+    for (const auto& out : tx->vout) {
+        totalStake += out.nValue;
+    }
+    
+    if (totalStake < minStake) {
+        LogPrintf("CheckValidatorMinimumStake: Validator stake (%s) is less than minimum required (%s)\n",
+                 FormatMoney(totalStake), FormatMoney(minStake));
+        return false;
+    }
+    
+    return true;
+}
+
+bool CheckValidatorMinimumStake(const CScript& scriptPubKey, Chainstate& chainstate) {
+    // Use the provided script directly
+    
+    // Check the UTXO set for all unspent outputs to this address
+    std::vector<COutPoint> vOutPoints;
+    CAmount totalStake = 0;
+    
+    // Use the coin view to check the UTXO set
+    CCoinsViewCache& view = chainstate.CoinsTip();
+    
+    // Scan the UTXO set for outputs to this address
+    // Note: This is a simplified approach; in a real implementation, we'd need a more efficient way
+    // to query the UTXO set by address
+    // Since GetOutPointsFor doesn't exist, we'll iterate through all UTXOs
+    
+    // Iterate through all UTXOs in the view
+    std::unique_ptr<CCoinsViewCursor> cursor(view.Cursor());
+    if (cursor) {
+        COutPoint outpoint;
+        Coin coin;
+        while (cursor->Valid()) {
+            if (cursor->GetKey(outpoint) && cursor->GetValue(coin) && !coin.IsSpent()) {
+                // Check if this output is to our validator's address
+                if (coin.out.scriptPubKey == scriptPubKey) {
+                    vOutPoints.push_back(outpoint);
+                }
+            }
+            cursor->Next();
+        }
+    }
+    
+    for (const auto& outpoint : vOutPoints) {
+        Coin coin;
+        if (!view.GetCoin(outpoint, coin) || coin.IsSpent()) continue;
+        
+        // Check if this output is to our validator's address
+        if (coin.out.scriptPubKey == scriptPubKey) {
+            totalStake += coin.out.nValue;
+            vOutPoints.push_back(outpoint);
+        }
+    }
+    
+    // Check if the total stake meets the minimum requirement
+    if (totalStake < VALIDATOR_MIN_STAKE) {
+        LogPrintf("CheckValidatorMinimumStake: Validator stake (%s) is less than minimum required (%s)\n",
+                 FormatMoney(totalStake), FormatMoney(VALIDATOR_MIN_STAKE));
+        return false;
+    }
+    
+    LogPrintf("CheckValidatorMinimumStake: Validator has sufficient stake: %s\n",
+             FormatMoney(totalStake));
+    return true;
+}
+
+// bit2coin: check if validator is eligible to create blocks
+bool IsValidatorEligible(const CTransactionRef& tx, const uint256& validatorId, Chainstate& chainstate)
+{
+    // Get validator from registry
+    CValidator* validator = g_validatorRegistry.GetValidator(validatorId);
+    if (!validator) {
+        LogPrintf("IsValidatorEligible: Validator %s not found in registry\n", validatorId.ToString());
+        return false;
+    }
+
+    // Check if validator is eligible
+    return IsValidatorEligible(*validator, chainstate);
+}
+
+bool IsValidatorEligible(const CValidator& validator, Chainstate& chainstate)
+{
+    // Check if validator is active
+    if (validator.status != ValidatorStatus::ACTIVE) {
+        LogPrintf("Validator %s is not active (status: %s)\n", validator.validatorId.ToString(), validator.status);
+        return false;
+    }
+
+    // Check if validator has been slashed
+    if (validator.status == ValidatorStatus::SLASHED) {
+        LogPrintf("Validator %s has been slashed\n", validator.validatorId.ToString());
+        return false;
+    }
+
+    // Check if validator meets minimum stake requirement
+    if (validator.stakedAmount < VALIDATOR_MIN_STAKE) {
+        LogPrintf("Validator %s does not meet minimum stake requirement (%s < %s)\n", 
+                 validator.validatorId.ToString(), FormatMoney(validator.stakedAmount), FormatMoney(VALIDATOR_MIN_STAKE));
+        return false;
+    }
+    
+    // Verify the validator's stake is still valid in the UTXO set
+    // This prevents validators from double-spending their stake
+    bool stakeVerified = CheckValidatorMinimumStake(validator.scriptPubKey, chainstate);
+    if (!stakeVerified) {
+        LogPrintf("Validator %s stake not verified in UTXO set\n", validator.validatorId.ToString());
+        return false;
+    }
+
+    return true;
+}
+
+// bit2coin: select validator for block creation using VRF
+bool SelectBlockValidator(const CBlockIndex* pindexPrev, uint256& selectedValidator, Chainstate& chainstate)
+{
+    // Get all active validators
+    std::vector<CValidator*> activeValidators = g_validatorRegistry.GetActiveValidators();
+    
+    if (activeValidators.empty()) {
+        LogPrintf("SelectBlockValidator: No active validators found\n");
+        return false;
+    }
+    
+    // Select validator using VRF-like weighted random selection based on stake and reputation
+    // We pass the previous block hash directly as the source of randomness
+    CValidator* selectedValidatorPtr = g_validatorRegistry.SelectNextValidator(pindexPrev->GetBlockHash(), GetTime());
+    if (selectedValidatorPtr) {
+        selectedValidator = selectedValidatorPtr->validatorId;
+    }
+    
+    if (selectedValidator.IsNull()) {
+        LogPrintf("SelectBlockValidator: Failed to select a validator\n");
+        return false;
+    }
+    
+    LogPrintf("SelectBlockValidator: Selected validator %s\n", selectedValidator.ToString());
+    return true;
 }
 

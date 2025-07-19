@@ -266,6 +266,12 @@ arith_uint256 CalculateASERT(const arith_uint256 &refTarget,
 
 unsigned int GetNextTargetRequired(const CBlockIndex* pindexLast, bool fProofOfStake, const Consensus::Params& params)
 {
+    // BT2C: PoS-only blockchain, reject PoW blocks
+    if (!fProofOfStake) {
+        // Return an invalid target for PoW blocks
+        return UintToArith256(params.powLimit).GetCompact();
+    }
+    
     if (pindexLast == nullptr || params.fPowNoRetargeting)
         return UintToArith256(params.powLimit).GetCompact(); // genesis block
 
@@ -276,37 +282,18 @@ unsigned int GetNextTargetRequired(const CBlockIndex* pindexLast, bool fProofOfS
     if (pindexPrevPrev->pprev == nullptr)
         return UintToArith256(params.bnInitialHashTarget).GetCompact(); // second block
 
-    if (!fProofOfStake && IsProtocolV14(pindexPrev))
-        return GetNextASERTWorkRequired(pindexPrev, pindexLast, params);
-
     int64_t nActualSpacing = pindexPrev->GetBlockTime() - pindexPrevPrev->GetBlockTime();
-
-    // rfc20
-    int64_t nHypotheticalSpacing = pindexLast->GetBlockTime() - pindexPrev->GetBlockTime();
-    if (!fProofOfStake && IsProtocolV12(pindexPrev) && (nHypotheticalSpacing > nActualSpacing))
-        nActualSpacing = nHypotheticalSpacing;
 
     // peercoin: target change every block
     // peercoin: retarget with exponential moving toward target spacing
     CBigNum bnNew;
     bnNew.SetCompact(pindexPrev->nBits);
     if (Params().NetworkIDString() != CBaseChainParams::REGTEST) {
-        int64_t nTargetSpacing;
-
-        if (fProofOfStake) {
-            nTargetSpacing = params.nStakeTargetSpacing;
-        } else {
-            if (IsProtocolV09(pindexLast->nTime)) {
-                nTargetSpacing = params.nStakeTargetSpacing * 6;
-            } else {
-                nTargetSpacing = std::min(params.nTargetSpacingWorkMax, params.nStakeTargetSpacing * (1 + pindexLast->nHeight - pindexPrev->nHeight));
-            }
-        }
-
+        int64_t nTargetSpacing = params.nStakeTargetSpacing;
         int64_t nInterval = params.nTargetTimespan / nTargetSpacing;
         bnNew *= ((nInterval - 1) * nTargetSpacing + nActualSpacing + nActualSpacing);
         bnNew /= ((nInterval + 1) * nTargetSpacing);
-        }
+    }
 
     if (bnNew > CBigNum(params.powLimit))
         bnNew = CBigNum(params.powLimit);
@@ -316,19 +303,8 @@ unsigned int GetNextTargetRequired(const CBlockIndex* pindexLast, bool fProofOfS
 
 bool CheckProofOfWork(uint256 hash, unsigned int nBits, const Consensus::Params& params)
 {
-    bool fNegative;
-    bool fOverflow;
-    arith_uint256 bnTarget;
-
-    bnTarget.SetCompact(nBits, &fNegative, &fOverflow);
-
-    // Check range
-    if (fNegative || bnTarget == 0 || fOverflow || bnTarget > UintToArith256(params.powLimit))
-        return false;
-
-    // Check proof of work matches claimed amount
-    if (UintToArith256(hash) > bnTarget)
-        return false;
-
-    return true;
+    // BT2C: PoS-only blockchain, PoW is disabled
+    // This function is kept for compatibility with existing code
+    // but always returns false to reject PoW blocks
+    return false;
 }

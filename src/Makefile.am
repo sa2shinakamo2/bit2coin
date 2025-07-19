@@ -435,6 +435,7 @@ libbitcoin_node_a_SOURCES = \
   validation.cpp \
   validationinterface.cpp \
   kernel.cpp \
+  validator.cpp \
   $(BITCOIN_CORE_H)
 
 if ENABLE_WALLET

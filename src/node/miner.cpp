@@ -11,32 +11,60 @@
 #include <consensus/amount.h>
 #include <consensus/consensus.h>
 #include <consensus/merkle.h>
+#include <consensus/tx_check.h>
 #include <consensus/tx_verify.h>
 #include <consensus/validation.h>
-#include <policy/policy.h>
-#include <pow.h>
-#include <primitives/transaction.h>
-#include <rpc/blockchain.h>
-#include <timedata.h>
-#include <rpc/blockchain.h>
-#include <util/moneystr.h>
-#include <util/system.h>
-#include <util/threadnames.h>
-#include <util/translation.h>
-#include <validation.h>
-#include <kernel.h>
+#include <cuckoocache.h>
+#include <flatfile.h>
+#include <hash.h>
+#include <index/txindex.h>
+#include <kernel/chainparams.h>
+#include <kernel/mempool_entry.h>
+#include <logging.h>
+#include <logging/timer.h>
 #include <net.h>
-#include <interfaces/chain.h>
-#include <node/context.h>
+#include <node/blockstorage.h>
 #include <node/interface_ui.h>
-#include <util/exception.h>
-#include <util/thread.h>
-#include <validation.h>
+#include <node/utxo_snapshot.h>
+#include <policy/policy.h>
+#include <policy/rbf.h>
+#include <policy/settings.h>
+#include <pow.h>
+#include <primitives/block.h>
+#include <primitives/transaction.h>
+#include <random.h>
+#include <reverse_iterator.h>
+#include <script/script.h>
+#include <script/sigcache.h>
+#include <shutdown.h>
+#include <signet.h>
+#include <tinyformat.h>
+#include <txdb.h>
+#include <txmempool.h>
+#include <uint256.h>
+#include <undo.h>
+#include <util/check.h> // For NDEBUG compile time check
+#include <util/fs.h>
+#include <util/fs_helpers.h>
+#include <util/hasher.h>
+#include <util/moneystr.h>
+#include <util/strencodings.h>
+#include <util/system.h>
+#include <util/time.h>
+#include <util/trace.h>
+#include <util/translation.h>
+#include <validationinterface.h>
+#include <warnings.h>
 #include <wallet/wallet.h>
 #include <wallet/coincontrol.h>
-#include <warnings.h>
+#include <wallet/coinselection.h>
 #include <wallet/spend.h>
-#include <wallet/wallet.h>
+#include <validator.h>
+#include <timedata.h>
+#include <kernel.h>
+#include <util/thread.h>
+#include <util/exception.h>
+#include <util/threadnames.h>
 
 #include <algorithm>
 #include <utility>
@@ -125,7 +153,7 @@ void BlockAssembler::resetBlock()
     nFees = 0;
 }
 
-// peercoin: if pwallet != NULL it will attempt to create coinstake
+// BT2C: PoS-only blockchain, this function creates a new PoS block
 std::unique_ptr<CBlockTemplate> BlockAssembler::CreateNewBlock(const CScript& scriptPubKeyIn, CWallet* pwallet, bool* pfPoSCancel, NodeContext* m_node, CTxDestination destination)
 {
     const auto time_start{SteadyClock::now()};
@@ -556,7 +584,7 @@ void PoSMiner(NodeContext& m_node)
         return;
 
     LogPrintf("CPUMiner started for proof-of-stake\n");
-    util::ThreadRename("peercoin-stake-minter");
+    util::ThreadSetInternalName("peercoin-stake-minter");
 
     unsigned int nExtraNonce = 0;
 
@@ -580,9 +608,8 @@ void PoSMiner(NodeContext& m_node)
             dest = *op_dest;
         }
 
-        wallet::CoinsResult availableCoins;
         CCoinControl coincontrol;
-        availableCoins = AvailableCoins(*pwallet, &coincontrol);
+        wallet::CoinsResult availableCoins = wallet::AvailableCoins(*pwallet, &coincontrol);
         pos_timio = 500 + 30 * sqrt(availableCoins.Size());
         LogPrintf("Set proof-of-stake timeout: %ums for %u UTXOs\n", pos_timio, availableCoins.Size());
     }
@@ -596,41 +623,49 @@ void PoSMiner(NodeContext& m_node)
                     uiInterface.NotifyAlertChanged();
                 }
                 fNeedToClear = true;
-                if (!connman->interruptNet.sleep_for(std::chrono::seconds(3)))
-                    return;
-            }
-
-            if (Params().MiningRequiresPeers()) {
-                // Busy-wait for the network to come online so we don't waste time mining
-                // on an obsolete chain. In regtest mode we expect to fly solo.
-                while(connman == nullptr || connman->GetNodeCount(ConnectionDirection::Both) == 0 || m_node.chainman->ActiveChainstate().IsInitialBlockDownload()) {
-                    while(connman == nullptr) {UninterruptibleSleep(1s);}
-                    if (!connman->interruptNet.sleep_for(std::chrono::seconds(10)))
+                if (!m_node.connman->interruptNet.sleep_for(std::chrono::seconds(10)))
                         return;
-                    }
-            }
-            CBlockIndex* pindexPrev;
-            {
-                LOCK(cs_main);
-                pindexPrev = m_node.chainman->ActiveChain().Tip();
-
-                while (GuessVerificationProgress(Params().TxData(), pindexPrev) < 0.996)
-                {
-                    LogPrintf("Minter thread sleeps while sync at %f\n", GuessVerificationProgress(Params().TxData(), pindexPrev));
-                    if (strMintWarning != strMintSyncMessage) {
-                        strMintWarning = strMintSyncMessage;
-                        uiInterface.NotifyAlertChanged();
-                    }
-                    fNeedToClear = true;
-                    if (!connman->interruptNet.sleep_for(std::chrono::seconds(10)))
-                            return;
-                }
             }
             if (fNeedToClear) {
                 strMintWarning = strMintEmpty;
                 uiInterface.NotifyAlertChanged();
                 fNeedToClear = false;
             }
+
+            // Get the current tip of the blockchain
+            CBlockIndex* pindexPrev = m_node.chainman->ActiveChain().Tip();
+            if (!pindexPrev) continue;
+
+            // Check if this validator is selected for the current slot
+            uint256 selectedValidator;
+            bool isSelected = SelectBlockValidator(pindexPrev, selectedValidator, m_node.chainman->ActiveChainstate());
+            
+            // Get our validator ID
+            uint256 ourValidatorId;
+            {
+                LOCK(pwallet->cs_wallet);
+                // Get our script pubkey from destination
+                CScript scriptPubKey = GetScriptForDestination(dest);
+                
+                // Find validator by script pubkey
+                std::vector<CValidator*> validators = g_validatorRegistry.GetActiveValidators();
+                for (CValidator* validator : validators) {
+                    if (validator->scriptPubKey == scriptPubKey) {
+                        ourValidatorId = validator->validatorId;
+                        break;
+                    }
+                }
+            }
+
+            // Only create a block if we are the selected validator
+            if (!isSelected || selectedValidator != ourValidatorId) {
+                // Not our turn to create a block
+                if (!m_node.connman->interruptNet.sleep_for(std::chrono::milliseconds(pos_timio)))
+                    return;
+                continue;
+            }
+
+            LogPrintf("PoSMiner: We are the selected validator for this slot\n");
 
             //
             // Create new block
@@ -646,7 +681,7 @@ void PoSMiner(NodeContext& m_node)
                 }
                 catch (const std::runtime_error &e)
                 {
-                    LogPrintf("PeercoinMiner runtime error: %s\n", e.what());
+                    LogPrintf("BT2CMiner runtime error: %s\n", e.what());
                     continue;
                 }
             }
@@ -655,14 +690,14 @@ void PoSMiner(NodeContext& m_node)
             {
                 if (fPoSCancel == true)
                 {
-                    if (!connman->interruptNet.sleep_for(std::chrono::milliseconds(pos_timio)))
+                    if (!m_node.connman->interruptNet.sleep_for(std::chrono::milliseconds(pos_timio)))
                         return;
                     continue;
                 }
                 strMintWarning = strMintBlockMessage;
                 uiInterface.NotifyAlertChanged();
-                LogPrintf("Error in PeercoinMiner: Keypool ran out, please call keypoolrefill before restarting the mining thread\n");
-                if (!connman->interruptNet.sleep_for(std::chrono::seconds(10)))
+                LogPrintf("Error in BT2CMiner: Keypool ran out, please call keypoolrefill before restarting the mining thread\n");
+                if (!m_node.connman->interruptNet.sleep_for(std::chrono::seconds(10)))
                    return;
 
                 return;
@@ -670,9 +705,9 @@ void PoSMiner(NodeContext& m_node)
             pblock = &pblocktemplate->block;
             IncrementExtraNonce(pblock, pindexPrev, nExtraNonce);
 
-            // peercoin: if proof-of-stake block found then process block
-            if (pblock->IsProofOfStake())
+            // BT2C: process PoS block (we only create PoS blocks)
             {
+                // We don't need to check IsProofOfStake() since we only create PoS blocks
                 {
                     LOCK2(pwallet->cs_wallet, cs_main);
                     if (!SignBlock(*pblock, *pwallet))
@@ -681,20 +716,28 @@ void PoSMiner(NodeContext& m_node)
                         continue;
                     }
                 }
-                LogPrintf("CPUMiner : proof-of-stake block found %s\n", pblock->GetHash().ToString());
+                LogPrintf("BT2CMiner: proof-of-stake block found %s\n", pblock->GetHash().ToString());
                 try {
                     ProcessBlockFound(pblock, Params(), m_node);
+                    
+                    // Update validator reputation after successful block creation
+                    CValidator* validator = g_validatorRegistry.GetValidator(ourValidatorId);
+                    if (validator) {
+                        validator->reputation.blocksProduced++;
+                        g_validatorRegistry.UpdateValidatorReputation(ourValidatorId, true); // true = produced block
+                        LogPrintf("BT2CMiner: Updated validator reputation, blocks produced: %u\n", validator->reputation.blocksProduced);
                     }
+                }
                 catch (const std::runtime_error &e)
                 {
-                    LogPrintf("PeercoinMiner runtime error: %s\n", e.what());
+                    LogPrintf("BT2CMiner runtime error: %s\n", e.what());
                     continue;
                 }
                 // Rest for ~3 minutes after successful block to preserve close quick
-                if (!connman->interruptNet.sleep_for(std::chrono::seconds(60 + GetRand(4))))
+                if (!m_node.connman->interruptNet.sleep_for(std::chrono::seconds(60 + GetRand(4))))
                     return;
             }
-            if (!connman->interruptNet.sleep_for(std::chrono::milliseconds(pos_timio)))
+            if (!m_node.connman->interruptNet.sleep_for(std::chrono::milliseconds(pos_timio)))
                 return;
 
             continue;
@@ -702,21 +745,19 @@ void PoSMiner(NodeContext& m_node)
     }
     catch (::boost::thread_interrupted)
     {
-        LogPrintf("PeercoinMiner terminated\n");
+        LogPrintf("BT2CMiner terminated\n");
         return;
     }
     catch (const std::runtime_error &e)
     {
-        LogPrintf("PeercoinMiner runtime error: %s\n", e.what());
+        LogPrintf("BT2CMiner runtime error: %s\n", e.what());
         return;
     }
 #endif
 }
-
-// peercoin: stake minter thread
 void static ThreadStakeMinter(NodeContext& m_node)
 {
-    LogPrintf("ThreadStakeMinter started\n");
+    LogPrintf("BT2C: PoS validator thread started\n");
     while(true) {
         try
         {
@@ -724,17 +765,17 @@ void static ThreadStakeMinter(NodeContext& m_node)
             break;
         }
         catch (std::exception& e) {
-            PrintExceptionContinue(&e, "ThreadStakeMinter()");
+            PrintExceptionContinue(&e, "BT2C PoS validator thread");
         } catch (...) {
-            PrintExceptionContinue(NULL, "ThreadStakeMinter()");
+            PrintExceptionContinue(NULL, "BT2C PoS validator thread");
         }
     }
-    LogPrintf("ThreadStakeMinter exiting\n");
+    LogPrintf("BT2C: PoS validator thread exiting\n");
 }
 
-// peercoin: stake minter
+// BT2C: PoS validator thread starter
 void MintStake(NodeContext& m_node)
 {
-    m_minter_thread = std::thread([&] { util::TraceThread("minter", [&] { ThreadStakeMinter(m_node); }); });
+    m_minter_thread = std::thread([&] { util::TraceThread("bt2c-validator", [&] { ThreadStakeMinter(m_node); }); });
 }
 } // namespace node

@@ -33,9 +33,17 @@ GetNextASERTWorkRequired(const CBlockIndex *pindexPrev,
                          const Consensus::Params &params,
                          const CBlockIndex *pindexAnchorBlock) noexcept;
 
+/**
+ * BT2C: PoS-only blockchain, returns target for PoS blocks only
+ * For PoW blocks (fProofOfStake=false), it returns an invalid target
+ */
 unsigned int GetNextTargetRequired(const CBlockIndex* pindexLast, bool fProofOfStake, const Consensus::Params& params);
 
-/** Check whether a block hash satisfies the proof-of-work requirement specified by nBits */
+/** 
+ * BT2C: PoS-only blockchain, PoW is disabled
+ * This function is kept for compatibility with existing code but always returns false
+ * to reject PoW blocks
+ */
 bool CheckProofOfWork(uint256 hash, unsigned int nBits, const Consensus::Params&);
 
 /**

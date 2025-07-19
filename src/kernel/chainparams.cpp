@@ -1,6 +1,7 @@
 // Copyright (c) 2010 Satoshi Nakamoto
 // Copyright (c) 2009-2021 The Bitcoin Core developers
 // Copyright (c) 2011-2025 The Peercoin developers
+// Copyright (c) 2025 The bit2coin developers
 // Distributed under the MIT software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
@@ -61,7 +62,7 @@ static CBlock CreateGenesisBlock(const char* pszTimestamp, const CScript& genesi
  */
 static CBlock CreateGenesisBlock(uint32_t nTimeTx, uint32_t nTimeBlock, uint32_t nNonce, uint32_t nBits, int32_t nVersion, const CAmount& genesisReward)
 {
-    const char* pszTimestamp = "Matonis 07-AUG-2012 Parallel Currencies And The Roadmap To Monetary Freedom";
+    const char* pszTimestamp = "bit2coin: Modern PoS with Bitcoin Economics - July 2025";
     const CScript genesisOutputScript = CScript();
     return CreateGenesisBlock(pszTimestamp, genesisOutputScript, nTimeTx, nTimeBlock, nNonce, nBits, nVersion, genesisReward);
 }
@@ -109,19 +110,23 @@ public:
         consensus.nMinimumChainWork = uint256S("0x000000000000000000000000000000000000000044a50fe819c39ad624021859");
         consensus.defaultAssumeValid = uint256S("0x000000000000000000035c3f0d31e71a5ee24c5aaf3354689f65bd7b07dee632"); // 784000
 */
-        consensus.BIP34Height = 339994;
-        consensus.BIP34Hash = uint256S("000000000000000237f50af4cfe8924e8693abc5bd8ae5abb95bc6d230f5953f");
+        consensus.BIP34Height = 0; // Active from genesis
+        consensus.BIP34Hash = uint256S("0");
         consensus.powLimit =            uint256S("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // ~arith_uint256(0) >> 32;
         consensus.bnInitialHashTarget = uint256S("0000000000ffffffffffffffffffffffffffffffffffffffffffffffffffffff"); // ~arith_uint256(0) >> 40;
 
-        consensus.nTargetTimespan = 7 * 24 * 60 * 60;  // one week
+        // BT2C economic parameters
+        consensus.nSubsidyHalvingInterval = 210000; // Bitcoin halving schedule (every 210,000 blocks)
+        consensus.nTargetTimespan = 14 * 24 * 60 * 60; // two weeks
         consensus.nStakeTargetSpacing = 10 * 60; // 10-minute block spacing
         consensus.nTargetSpacingWorkMax = 12 * consensus.nStakeTargetSpacing; // 2-hour
         consensus.nPowTargetSpacing = consensus.nStakeTargetSpacing;
-        consensus.nStakeMinAge = 60 * 60 * 24 * 30; // minimum age for coin age
-        consensus.nStakeMaxAge = 60 * 60 * 24 * 90;
+        
+        // PoS parameters
+        consensus.nStakeMinAge = 60 * 60 * 24; // 1 day minimum stake age
+        consensus.nStakeMaxAge = 60 * 60 * 24 * 90; // 90 days maximum stake age
         consensus.nModifierInterval = 6 * 60 * 60; // Modifier interval: time to elapse before new modifier is computed
-        consensus.nCoinbaseMaturity = 500;
+        consensus.nCoinbaseMaturity = 100; // Bitcoin-like maturity
 
         consensus.fPowAllowMinDifficultyBlocks = false;
         consensus.fPowNoRetargeting = false;
@@ -138,38 +143,40 @@ public:
          * The characters are rarely used upper ASCII, not valid as UTF-8, and produce
          * a large 32-bit integer with any alignment.
          */
-        pchMessageStart[0] = 0xe6;
-        pchMessageStart[1] = 0xe8;
-        pchMessageStart[2] = 0xe9;
-        pchMessageStart[3] = 0xe5;
-        nDefaultPort = 9901;
+        pchMessageStart[0] = 0xb2;
+        pchMessageStart[1] = 0xc2;
+        pchMessageStart[2] = 0xb2;
+        pchMessageStart[3] = 0xc2;
+        nDefaultPort = 8333; // Bitcoin-like port
         m_assumed_blockchain_size = 2;
 
-        genesis = CreateGenesisBlock(1345083810, 1345084287, 2179302059u, 0x1d00ffff, 1, 0);
+        genesis = CreateGenesisBlock(1345083810, 1345084287, 2179302059u, 0x1d00ffff, 1, 50 * COIN); // 50 BTC initial block reward
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x0000000032fe677166d54963b62a4677d8957e87c508eaa4fd7eb1c880cd27e3"));
-        assert(genesis.hashMerkleRoot == uint256S("0x3c2d8f85fab4d17aac558cc648a1a58acff0de6deb890c29985690052c5993c2"));
+
+        
+
+        // BT2C: Updated genesis block hash and merkle root for our custom genesis block
+        assert(consensus.hashGenesisBlock == uint256S("0x64bb5f57608163c2a0df5059a88f1aa607b515fa2ffd0ab390252836dd6b0ded"));
+        assert(genesis.hashMerkleRoot == uint256S("0x03d6711825be496d185f9fe6a9992e79940f9307f5df4f6e891659159c31b507"));
 
         // Note that of those which support the service bits prefix, most only support a subset of
         // possible options.
         // This is fine at runtime as we'll fall back to using them as an addrfetch if they don't support the
         // service bits we want, but we should get them updated to support all service bits wanted by any
         // release ASAP to avoid it where possible.
-        vSeeds.emplace_back("seed.peercoin.net");
-        vSeeds.emplace_back("seed2.peercoin.net");
-        vSeeds.emplace_back("seed.peercoin-library.org");
-        vSeeds.emplace_back("seed.ppcoin.info");
+        // Only one hardcoded seed node for now
+        vSeeds.emplace_back("129.212.187.39");
 
-        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,55);  // peercoin: addresses begin with 'P'
-        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,117); // peercoin: addresses begin with 'p'
-        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,183);
+        base58Prefixes[PUBKEY_ADDRESS] = std::vector<unsigned char>(1,0); // bit2coin: addresses begin with '1' like Bitcoin
+        base58Prefixes[SCRIPT_ADDRESS] = std::vector<unsigned char>(1,5); // bit2coin: addresses begin with '3' like Bitcoin
+        base58Prefixes[SECRET_KEY] =     std::vector<unsigned char>(1,128);
         base58Prefixes[EXT_PUBLIC_KEY] = {0x04, 0x88, 0xB2, 0x1E};
         base58Prefixes[EXT_SECRET_KEY] = {0x04, 0x88, 0xAD, 0xE4};
 
         // human readable prefix to bench32 address
-        bech32_hrp = "pc";
+        bech32_hrp = "bt2c";  // human readable prefix to bench32 address
 
-        vFixedSeeds = std::vector<uint8_t>(std::begin(chainparams_seed_main), std::end(chainparams_seed_main));
+        vFixedSeeds.clear(); // We'll use our own seeds
 
         fMiningRequiresPeers = true;
         fDefaultConsistencyChecks = false;
@@ -255,8 +262,12 @@ public:
 
         genesis = CreateGenesisBlock(1345083810, 1345090000, 122894938, 0x1d0fffff, 1, 0);
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x00000001f757bb737f6596503e17cd17b0658ce630cc727c0cca81aec47c9f06"));
-        assert(genesis.hashMerkleRoot == uint256S("0x3c2d8f85fab4d17aac558cc648a1a58acff0de6deb890c29985690052c5993c2"));
+
+        
+                // BT2C: Updated testnet genesis block hash for our custom genesis block
+        assert(consensus.hashGenesisBlock == uint256S("0xee03fed33b1fde11b811713a753e597af63894cb01612bb5d01efa6fca2371e2"));
+                // BT2C: Updated testnet genesis merkle root for our custom genesis block
+        assert(genesis.hashMerkleRoot == uint256S("0xb775ea43e21c7b50f5058b6703fcfa5ddf0b59ec1dd3b74d4bbd212fe213f872"));
 
         vFixedSeeds.clear();
         vSeeds.clear();
@@ -405,8 +416,12 @@ public:
 
         genesis = CreateGenesisBlock(1345083810, 1345090000, 122894938, 0x1d0fffff, 1, 0);
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x00000001f757bb737f6596503e17cd17b0658ce630cc727c0cca81aec47c9f06"));
-        assert(genesis.hashMerkleRoot == uint256S("0x3c2d8f85fab4d17aac558cc648a1a58acff0de6deb890c29985690052c5993c2"));
+
+        
+                // BT2C: Updated testnet genesis block hash for our custom genesis block
+        assert(consensus.hashGenesisBlock == uint256S("0xee03fed33b1fde11b811713a753e597af63894cb01612bb5d01efa6fca2371e2"));
+                // BT2C: Updated testnet genesis merkle root for our custom genesis block
+        assert(genesis.hashMerkleRoot == uint256S("0xb775ea43e21c7b50f5058b6703fcfa5ddf0b59ec1dd3b74d4bbd212fe213f872"));
 
         vFixedSeeds.clear();
 
@@ -513,8 +528,12 @@ public:
         genesis = CreateGenesisBlock(1345083810, 1345090000, 122894938, 0x1d0fffff, 1, 0);
 
         consensus.hashGenesisBlock = genesis.GetHash();
-        assert(consensus.hashGenesisBlock == uint256S("0x00000001f757bb737f6596503e17cd17b0658ce630cc727c0cca81aec47c9f06"));
-        assert(genesis.hashMerkleRoot == uint256S("0x3c2d8f85fab4d17aac558cc648a1a58acff0de6deb890c29985690052c5993c2"));
+
+        
+                // BT2C: Updated testnet genesis block hash for our custom genesis block
+        assert(consensus.hashGenesisBlock == uint256S("0xee03fed33b1fde11b811713a753e597af63894cb01612bb5d01efa6fca2371e2"));
+                // BT2C: Updated testnet genesis merkle root for our custom genesis block
+        assert(genesis.hashMerkleRoot == uint256S("0xb775ea43e21c7b50f5058b6703fcfa5ddf0b59ec1dd3b74d4bbd212fe213f872"));
 
         vFixedSeeds.clear(); //!< Regtest mode doesn't have any fixed seeds.
         vSeeds.clear();
@@ -529,7 +548,7 @@ public:
 
         checkpointData = {
             {
-                {0, uint256S("0x00000001f757bb737f6596503e17cd17b0658ce630cc727c0cca81aec47c9f06")}
+                {0, uint256S("0x64bb5f57608163c2a0df5059a88f1aa607b515fa2ffd0ab390252836dd6b0ded")}
             }
         };
 

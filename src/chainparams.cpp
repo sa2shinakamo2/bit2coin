@@ -84,6 +84,7 @@ std::unique_ptr<const CChainParams> CreateChainParams(const ArgsManager& args, c
 
 void SelectParams(const std::string& network)
 {
+    fprintf(stderr, "BT2C: SelectParams called with network: %s\n", network.c_str());
     SelectBaseParams(network);
     globalChainParams = CreateChainParams(gArgs, network);
 }

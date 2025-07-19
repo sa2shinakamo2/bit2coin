@@ -5,6 +5,7 @@
 #define PEERCOIN_KERNEL_H
 
 #include <primitives/transaction.h> // CTransaction(Ref)
+#include <validator.h> // Include validator system
 
 class CBlockIndex;
 class BlockValidationState;
@@ -71,5 +72,16 @@ unsigned int HowSuperMajority(int minVersion, const CBlockIndex* pstart, unsigne
 
 // peercoin: entropy bit for stake modifier if chosen by modifier
 unsigned int GetStakeEntropyBit(const CBlock& block);
+
+// bit2coin: check if validator meets minimum stake requirement
+bool CheckValidatorMinimumStake(const CTransactionRef& tx, const CAmount& minStake);
+bool CheckValidatorMinimumStake(const std::string& validatorAddress, Chainstate& chainstate);
+
+// bit2coin: check if validator is eligible to create blocks
+bool IsValidatorEligible(const CTransactionRef& tx, const uint256& validatorId, Chainstate& chainstate);
+bool IsValidatorEligible(const CValidator& validator, Chainstate& chainstate);
+
+// bit2coin: select a validator for block creation using VRF
+bool SelectBlockValidator(const CBlockIndex* pindexPrev, uint256& selectedValidator, Chainstate& chainstate);
 
 #endif // PEERCOIN_KERNEL_H

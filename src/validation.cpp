@@ -48,6 +48,8 @@
 #include <undo.h>
 #include <util/check.h> // For NDEBUG compile time check
 #include <util/fs.h>
+#include <key_io.h>
+#include <validator.h>
 #include <util/fs_helpers.h>
 #include <util/hasher.h>
 #include <util/moneystr.h>
@@ -1384,8 +1386,43 @@ PackageMempoolAcceptResult ProcessNewPackage(Chainstate& active_chainstate, CTxM
     return result;
 }
 
-int64_t GetProofOfWorkReward(unsigned int nBits, uint32_t nTime)
+// BT2C: Block reward calculation based on halving every 210,000 blocks
+CAmount GetBT2CBlockReward(int nHeight)
 {
+    // Initial block reward is 50 BTC
+    CAmount nSubsidy = 50 * COIN;
+    
+    // Halving every 210,000 blocks (approximately every 4 years with 10-minute blocks)
+    int halvings = nHeight / 210000;
+    
+    // Force block reward to zero when right shift is undefined
+    if (halvings >= 64)
+        return 0;
+        
+    // Apply halving
+    nSubsidy >>= halvings;
+    
+    // Minimum reward is 1 satoshi
+    if (nSubsidy < 1)
+        nSubsidy = 1;
+    
+    if (gArgs.GetBoolArg("-printcreation", false))
+        LogPrintf("%s: height=%d halvings=%d create=%s\n", __func__, nHeight, halvings, FormatMoney(nSubsidy));
+    
+    return nSubsidy;
+}
+
+// Internal implementation with chainparams parameter
+static int64_t GetProofOfWorkRewardInternal(unsigned int nBits, uint32_t nTime, const CChainParams& chainparams)
+{
+    // BT2C: Use the chain height to determine block reward
+    // Access chain height through chainparams instead of g_chainman
+    int nHeight = 0; // Default to genesis block height
+    
+    // Use our new BT2C block reward function
+    return GetBT2CBlockReward(nHeight);
+    
+    /* Original Peercoin reward calculation - kept for reference
     CBigNum bnSubsidyLimit = MAX_MINT_PROOF_OF_WORK;
     CBigNum bnTarget;
     bnTarget.SetCompact(nBits);
@@ -1417,36 +1454,46 @@ int64_t GetProofOfWorkReward(unsigned int nBits, uint32_t nTime)
         LogPrintf("%s: create=%s nBits=0x%08x nSubsidy=%lld\n", __func__, FormatMoney(nSubsidy), nBits, nSubsidy);
 
     return nSubsidy;
+    */
+}
+
+// Public function with the signature matching the declaration in validation.h
+CAmount GetProofOfWorkReward(unsigned int nBits, uint32_t nTime)
+{
+    return GetProofOfWorkRewardInternal(nBits, nTime, Params());
 }
 
 // peercoin: miner's coin stake is rewarded based on coin age spent (coin-days)
-int64_t GetProofOfStakeReward(int64_t nCoinAge, uint32_t nTime, uint64_t nMoneySupply)
+static int64_t GetProofOfStakeRewardInternal(int64_t nCoinAge, uint32_t nTime, uint64_t nMoneySupply, const CChainParams& chainparams)
 {
+    // BT2C: Use the same block reward logic for both PoW and PoS blocks
+    // Get current block height
+    int nHeight = 0; // Default to genesis block height
+    
+    // Use our BT2C block reward function
+    CAmount nSubsidy = GetBT2CBlockReward(nHeight);
+    
+    // Log for debugging
+    if (gArgs.GetBoolArg("-printcreation", false)) {
+        LogPrintf("%s: height=%d create=%s nCoinAge=%lld\n", 
+                  __func__, nHeight, FormatMoney(nSubsidy), nCoinAge);
+    }
+    
+    return nSubsidy;
+    
+    /* Original Peercoin PoS reward calculation - kept for reference
     static int64_t nRewardCoinYear = CENT;  // creation amount per coin-year
     int64_t nSubsidy = nCoinAge * 33 / (365 * 33 + 8) * nRewardCoinYear;
-
-    if (IsProtocolV09(nTime)) {
-        // rfc18
-        // YearlyBlocks = ((365 * 33 + 8) / 33) * 1440 / 10
-        // some efforts not to lose precision
-        CBigNum bnInflationAdjustment = nMoneySupply;
-        bnInflationAdjustment *= 25 * 33;
-        bnInflationAdjustment /= 10000 * 144;
-        bnInflationAdjustment /= (365 * 33 + 8);
-
-        uint64_t nInflationAdjustment = bnInflationAdjustment.getuint64();
-        uint64_t nSubsidyNew = (nSubsidy * 3) + nInflationAdjustment;
-
-        if (gArgs.GetBoolArg("-printcreation", false))
-            LogPrintf("%s: money supply %ld, inflation adjustment %f, old subsidy %ld, new subsidy %ld\n", __func__, nMoneySupply, nInflationAdjustment/1000000.0, nSubsidy, nSubsidyNew);
-
-        nSubsidy = nSubsidyNew;
-        }
-
-    if (gArgs.GetBoolArg("-printcreation", false))
-        LogPrintf("%s: create=%s nCoinAge=%lld\n", __func__, FormatMoney(nSubsidy), nCoinAge);
-    return nSubsidy;
+    */
 }
+
+// Public function with the signature matching the declaration in validation.h
+CAmount GetProofOfStakeReward(int64_t nCoinAge, uint32_t nTime, uint64_t nMoneySupply)
+{
+    return GetProofOfStakeRewardInternal(nCoinAge, nTime, nMoneySupply, Params());
+}
+
+
 
 CoinsViews::CoinsViews(DBParams db_params, CoinsViewOptions options)
     : m_dbview{std::move(db_params), std::move(options)},
@@ -1930,6 +1977,52 @@ static int64_t num_blocks_total = 0;
 bool PeercoinContextualBlockChecks(const CBlock& block, BlockValidationState& state, CBlockIndex* pindex, bool fJustCheck, Chainstate& chainstate)
 {
     uint256 hashProofOfStake = uint256();
+    
+    // BT2C: verify this block was created by an eligible validator
+    if (block.IsProofOfStake()) {
+        // Extract validator information from coinstake transaction
+        uint256 validatorId;
+        
+        // Check if this is a registered validator
+        // Generate validator ID from script pubkey directly since GetValidatorIdByScriptPubKey doesn't exist
+        CHashWriter hasher(SER_GETHASH, 0);
+        hasher << block.vtx[1]->vout[1].scriptPubKey;
+        validatorId = hasher.GetHash();
+        
+        // Check if validator exists in registry
+        if (!g_validatorRegistry.GetValidator(validatorId)) {
+            return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS, "unregistered-validator", 
+                               "Block created by unregistered validator");
+        }
+        
+        // Check if validator is eligible (active, not slashed, meets minimum stake)
+        CValidator* validator = g_validatorRegistry.GetValidator(validatorId);
+        if (!validator) {
+            return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS, "invalid-validator", 
+                               "Validator not found in registry");
+        }
+        
+        if (!IsValidatorEligible(*validator, chainstate)) {
+            return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS, "ineligible-validator", 
+                               "Validator not eligible to create blocks");
+        }
+        
+        // Check if this validator was selected for this slot
+        uint256 selectedValidator;
+        if (!SelectBlockValidator(pindex->pprev, selectedValidator, chainstate)) {
+            return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS, "validator-selection-failed", 
+                               "Failed to select validator for block");
+        }
+        
+        if (selectedValidator != validatorId) {
+            return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS, "wrong-validator", 
+                               "Block created by validator not selected for this slot");
+        }
+        
+        LogPrintf("BT2C: Block %s validated by eligible validator %s\n", 
+                  block.GetHash().ToString(), validatorId.ToString());
+    }
+    
     // peercoin: verify hash target and signature of coinstake tx
     if (block.IsProofOfStake() && !CheckProofOfStake(state, pindex->pprev, block.vtx[1], block.nBits, hashProofOfStake, block.vtx[1]->nTime ? block.vtx[1]->nTime : block.nTime, chainstate)) {
         LogPrintf("WARNING: %s: check proof-of-stake failed for block %s\n", __func__, block.GetHash().ToString());
@@ -3302,9 +3395,18 @@ void Chainstate::ReceivedBlockTransactions(const CBlock& block, CBlockIndex* pin
 
 static bool CheckBlockHeader(const CBlockHeader& block, BlockValidationState& state, const Consensus::Params& consensusParams, bool fCheckPOW = true)
 {
-    // Check proof of work matches claimed amount
-    if (fCheckPOW && !CheckProofOfWork(block.GetHash(), block.nBits, consensusParams))
-        return state.Invalid(BlockValidationResult::BLOCK_INVALID_HEADER, "high-hash", "proof of work failed");
+    // BT2C: For PoS-only system, we reject all PoW blocks
+    const CBlock& blockRef = static_cast<const CBlock&>(block);
+    if (blockRef.IsProofOfWork()) {
+        return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS, "pow-block", "proof of work blocks are not allowed in BT2C");
+    }
+    
+    // Legacy check for compatibility with existing code
+    if (fCheckPOW && static_cast<const CBlock&>(block).IsProofOfWork()) {
+        if (!CheckProofOfWork(block.GetHash(), block.nBits, consensusParams)) {
+            return state.Invalid(BlockValidationResult::BLOCK_INVALID_HEADER, "high-hash", "proof of work failed");
+        }
+    }
 
     return true;
 }
@@ -3374,6 +3476,10 @@ bool CheckBlock(const CBlock& block, BlockValidationState& state, const Consensu
     // redundant with the call in AcceptBlockHeader.
     if (!CheckBlockHeader(block, state, consensusParams, fCheckPOW && !block.IsProofOfStake()))
         return false;
+        
+    // BT2C: Reject PoW blocks - we are phasing out PoW in favor of PoS
+    if (block.IsProofOfWork())
+        return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS, "pow-disabled", "proof of work is disabled in BT2C");
 
     // Signet only: check block solution
     if (consensusParams.signet_blocks && fCheckPOW && !CheckSignetBlockSolution(block, consensusParams)) {

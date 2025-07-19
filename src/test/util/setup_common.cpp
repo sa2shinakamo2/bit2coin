@@ -131,6 +131,7 @@ BasicTestingSetup::BasicTestingSetup(const std::string& chainName, const std::ve
             throw std::runtime_error{error};
         }
     }
+
     SelectParams(chainName);
     SeedInsecureRand();
     if (G_TEST_LOG_FUN) LogInstance().PushBackCallback(G_TEST_LOG_FUN);

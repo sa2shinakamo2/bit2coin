@@ -23,6 +23,7 @@
 #include <rpc/server.h>
 #include <rpc/server_util.h>
 #include <rpc/util.h>
+#include <chain.h>
 #include <script/descriptor.h>
 #include <script/script.h>
 #include <script/signingprovider.h>
@@ -103,84 +104,68 @@ static UniValue GetNetworkHashPS(int lookup, int height, const CChain& active_ch
 static RPCHelpMan getnetworkhashps()
 {
     return RPCHelpMan{"getnetworkhashps",
-                "\nReturns the estimated network hashes per second based on the last n blocks.\n"
-                "Pass in [blocks] to override # of blocks, -1 specifies since last difficulty change.\n"
-                "Pass in [height] to estimate the network speed at the time when a certain block was found.\n",
+                "\nBT2C: Always returns 0 as BT2C is a PoS-only blockchain.\n"
+                "\nIn PoW blockchains, this would return the estimated network hashes per second.\n",
                 {
-                    {"nblocks", RPCArg::Type::NUM, RPCArg::Default{120}, "The number of blocks, or -1 for blocks since last difficulty change."},
-                    {"height", RPCArg::Type::NUM, RPCArg::Default{-1}, "To estimate at the time of the given height."},
+                    {"nblocks", RPCArg::Type::NUM, RPCArg::Default{120}, "Not used in BT2C."},
+                    {"height", RPCArg::Type::NUM, RPCArg::Default{-1}, "Not used in BT2C."},
                 },
                 RPCResult{
-                    RPCResult::Type::NUM, "", "Hashes per second estimated"},
+                    RPCResult::Type::NUM, "", "Always 0 for BT2C"},
                 RPCExamples{
                     HelpExampleCli("getnetworkhashps", "")
             + HelpExampleRpc("getnetworkhashps", "")
                 },
         [&](const RPCHelpMan& self, const JSONRPCRequest& request) -> UniValue
 {
-    ChainstateManager& chainman = EnsureAnyChainman(request.context);
-    LOCK(cs_main);
-    return GetNetworkHashPS(!request.params[0].isNull() ? request.params[0].getInt<int>() : 120, !request.params[1].isNull() ? request.params[1].getInt<int>() : -1, chainman.ActiveChain());
+    // BT2C: Always return 0 as this is a PoS-only blockchain
+    return 0;
 },
     };
 }
 
-// peercoin: get network Gh/s estimate
+// BT2C: get network Gh/s estimate (always returns 0 for PoS-only blockchain)
 static RPCHelpMan getnetworkghps()
 {
     return RPCHelpMan{"getnetworkghps",
-                "\nReturns a recent Ghash/second network mining estimate.\n",
+                "\nReturns the estimated network Gh/s based on the last n blocks.\n"
+                "For BT2C, this always returns 0 as it is a PoS-only blockchain.\n",
                 {
+                    {"nblocks", RPCArg::Type::NUM, RPCArg::Default{120}, "The number of blocks (ignored in BT2C)."},
+                    {"height", RPCArg::Type::NUM, RPCArg::Default{-1}, "To estimate at the time of the given height (ignored in BT2C)."},
                 },
                 RPCResult{
-                    RPCResult::Type::NUM, "", "Ghashes per second estimated"},
+                    RPCResult::Type::NUM, "", "Gigahashes per second estimated (always 0 for BT2C)"},
                 RPCExamples{
                     HelpExampleCli("getnetworkghps", "")
             + HelpExampleRpc("getnetworkghps", "")
                 },
         [&](const RPCHelpMan& self, const JSONRPCRequest& request) -> UniValue
 {
-    ChainstateManager& chainman = EnsureAnyChainman(request.context);
-    LOCK(cs_main);
-
-    int64_t nTargetSpacingWorkMin = 30;
-    int64_t nTargetSpacingWork = nTargetSpacingWorkMin;
-    int64_t nInterval = 72;
-    CBlockIndex* pindex = chainman.ActiveChain().Genesis();
-    CBlockIndex* pindexPrevWork = chainman.ActiveChain().Genesis();
-    while (pindex)
-    {
-        // Exponential moving average of recent proof-of-work block spacing
-        if (pindex->IsProofOfWork())
-        {
-            int64_t nActualSpacingWork = pindex->GetBlockTime() - pindexPrevWork->GetBlockTime();
-            nTargetSpacingWork = ((nInterval - 1) * nTargetSpacingWork + nActualSpacingWork + nActualSpacingWork) / (nInterval + 1);
-            nTargetSpacingWork = std::max(nTargetSpacingWork, nTargetSpacingWorkMin);
-            pindexPrevWork = pindex;
-        }
-        pindex = chainman.ActiveChain().Next(pindex);
-    }
-    double dNetworkGhps = GetDifficulty(pindex, chainman.ActiveChain().Tip()) * 4.294967296 / nTargetSpacingWork;
-    return dNetworkGhps;
+    // BT2C is a PoS-only blockchain, so network hashrate is always 0
+    UniValue result(UniValue::VNUM);
+    result.setInt(0);
+    return result;
 },
     };
 }
 
-//static bool GenerateBlock(ChainstateManager& chainman, CBlock& block, uint64_t& max_tries, unsigned int& extra_nonce, uint256& block_hash)
+// BT2C: Block generation for PoS-only blockchain
+// Note: BT2C does not support PoW block generation, this function will always fail for PoW blocks
 static bool GenerateBlock(ChainstateManager& chainman, CBlock& block, uint64_t& max_tries, std::shared_ptr<const CBlock>& block_out, bool process_new_block)
 {
     block_out.reset();
     block.hashMerkleRoot = BlockMerkleRoot(block);
-
-    while (max_tries > 0 && block.nNonce < std::numeric_limits<uint32_t>::max() && !CheckProofOfWork(block.GetHash(), block.nBits, chainman.GetConsensus()) && !ShutdownRequested()) {
-        ++block.nNonce;
-        --max_tries;
-    }
-    if (max_tries == 0 || ShutdownRequested()) {
+    
+    // BT2C is PoS-only, so PoW block generation will always fail
+    if (block.IsProofOfWork()) {
+        LogPrintf("BT2C: PoW block generation attempted but BT2C is PoS-only\n");
         return false;
     }
-    if (block.nNonce == std::numeric_limits<uint32_t>::max()) {
-        return true;
+    
+    // For PoS blocks, we don't need to iterate through nonces
+    if (max_tries == 0 || ShutdownRequested()) {
+        return false;
     }
 
     block_out = std::make_shared<const CBlock>(block);
@@ -454,7 +439,8 @@ static RPCHelpMan generateblock()
 static RPCHelpMan getmininginfo()
 {
     return RPCHelpMan{"getmininginfo",
-                "\nReturns a json object containing mining-related information.",
+                "\nReturns a json object containing validation-related information.\n"
+                "Note: BT2C is a PoS-only blockchain, so mining-related fields return 0.\n",
                 {},
                 RPCResult{
                     RPCResult::Type::OBJ, "", "",
@@ -463,8 +449,8 @@ static RPCHelpMan getmininginfo()
                         {RPCResult::Type::NUM, "currentblockweight", /*optional=*/true, "The block weight of the last assembled block (only present if a block was ever assembled)"},
                         {RPCResult::Type::NUM, "currentblocktx", /*optional=*/true, "The number of block transactions of the last assembled block (only present if a block was ever assembled)"},
                         {RPCResult::Type::NUM, "difficulty", "The current difficulty"},
-                        {RPCResult::Type::NUM, "networkhashps", "The network hashes per second"},
-                        {RPCResult::Type::NUM, "networkghps", "The network gigahashes per second"},
+                        {RPCResult::Type::NUM, "networkhashps", "The network hashes per second (always 0 in BT2C)"},
+                        {RPCResult::Type::NUM, "networkghps", "The network gigahashes per second (always 0 in BT2C)"},
                         {RPCResult::Type::NUM, "pooledtx", "The size of the mempool"},
                         {RPCResult::Type::STR, "chain", "current network name (main, test, signet, regtest)"},
                         {RPCResult::Type::STR, "warnings", "any network and blockchain warnings"},
@@ -983,7 +969,8 @@ static RPCHelpMan submitheader()
 {
     return RPCHelpMan{"submitheader",
                 "\nDecode the given hexdata as a header and submit it as a candidate chain tip if valid."
-                "\nThrows when the header is invalid.\n",
+                "\nThrows when the header is invalid.\n"
+                "\nNote: BT2C is a PoS-only blockchain, so PoW headers will be rejected.\n",
                 {
                     {"hexdata", RPCArg::Type::STR_HEX, RPCArg::Optional::NO, "the hex-encoded block header data"},
                 },
@@ -999,6 +986,14 @@ static RPCHelpMan submitheader()
     if (!DecodeHexBlockHeader(h, request.params[0].get_str())) {
         throw JSONRPCError(RPC_DESERIALIZATION_ERROR, "Block header decode failed");
     }
+    
+    // BT2C: For BT2C, all blocks must be PoS, so reject any potential PoW blocks
+    // Since we can't call IsProofOfWork() on CBlockHeader directly, we'll assume it's PoW
+    // if it doesn't have the PoS flag set (nFlags & CBlockIndex::BLOCK_PROOF_OF_STAKE)
+    if (!(h.nFlags & CBlockIndex::BLOCK_PROOF_OF_STAKE)) {
+        throw JSONRPCError(RPC_VERIFY_ERROR, "BT2C is a PoS-only blockchain, PoW headers are not accepted");
+    }
+    
     ChainstateManager& chainman = EnsureAnyChainman(request.context);
     {
         LOCK(cs_main);
