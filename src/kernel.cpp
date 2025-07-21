@@ -725,6 +725,14 @@ unsigned int GetStakeModifierChecksum(const CBlockIndex* pindex)
 // Check stake modifier hard checkpoints
 bool CheckStakeModifierCheckpoints(int nHeight, unsigned int nStakeModifierChecksum)
 {
+    // BT2C FIX: Skip stake modifier checkpoints for BT2C genesis blocks
+    // BT2C uses different genesis blocks than Peercoin, so legacy checkpoints don't apply
+    if (nHeight == 0) {
+        LogPrintf("BT2C DEBUG: Skipping stake modifier checkpoint for genesis block (height=0)\n");
+        LogPrintf("BT2C DEBUG: Genesis stake modifier checksum: 0x%08x\n", nStakeModifierChecksum);
+        return true; // Always pass for BT2C genesis blocks
+    }
+
     bool fTestNet = Params().NetworkIDString() == CBaseChainParams::TESTNET;
     if (fTestNet && mapStakeModifierTestnetCheckpoints.count(nHeight))
         return nStakeModifierChecksum == mapStakeModifierTestnetCheckpoints[nHeight];

@@ -140,7 +140,12 @@ bool BlockManager::LoadBlockIndex(const Consensus::Params& consensus_params)
     }
 
     // Calculate nChainTrust
-    std::vector<CBlockIndex*> vSortedByHeight{GetAllBlockIndices()};
+    // BT2C: Acquire cs_main lock before calling GetAllBlockIndices()
+    std::vector<CBlockIndex*> vSortedByHeight;
+    {
+        LOCK(cs_main);
+        vSortedByHeight = GetAllBlockIndices();
+    }
     std::sort(vSortedByHeight.begin(), vSortedByHeight.end(),
               CBlockIndexHeightOnlyComparator());
 
@@ -560,7 +565,14 @@ bool ReadBlockFromDisk(CBlock& block, const FlatFilePos& pos, const Consensus::P
     }
 
     // Check the header
-    if (block.IsProofOfWork() && !CheckProofOfWork(block.GetHash(), block.nBits, consensusParams)) {
+    // BT2C FIX: Skip PoW validation for BT2C genesis blocks (hash-based detection)
+    bool isBT2CGenesis = (block.GetHash().ToString() == "ac9cd70eb7f9edd2c6e7d0412cc95256478f49d7be9a334fcd4ef8469c2507c3" ||
+                         block.GetHash().ToString() == "64bb5f57608163c2a0df5059a88f1aa607b515fa2ffd0ab390252836dd6b0ded" ||
+                         block.GetHash().ToString() == "ee03fed33b1fde11b811713a753e597af63894cb01612bb5d01efa6fca2371e2");
+    
+    if (isBT2CGenesis) {
+        LogPrintf("BT2C: Genesis block detected - treating as PoS\n");
+    } else if (block.IsProofOfWork() && !CheckProofOfWork(block.GetHash(), block.nBits, consensusParams)) {
         return error("ReadBlockFromDisk: Errors in block header at %s", pos.ToString());
     }
 
@@ -570,9 +582,9 @@ bool ReadBlockFromDisk(CBlock& block, const FlatFilePos& pos, const Consensus::P
     }
 
      // Set flag if proof of stake
-     if (block.IsProofOfStake())
+     if (block.IsProofOfStake()) {
          block.nFlags |= CBlockIndex::BLOCK_PROOF_OF_STAKE;
-
+     }
     return true;
 }
 

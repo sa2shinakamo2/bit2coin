@@ -3395,15 +3395,31 @@ void Chainstate::ReceivedBlockTransactions(const CBlock& block, CBlockIndex* pin
 
 static bool CheckBlockHeader(const CBlockHeader& block, BlockValidationState& state, const Consensus::Params& consensusParams, bool fCheckPOW = true)
 {
-    // BT2C: For PoS-only system, we reject all PoW blocks
+    // BT2C: For PoS-only system, we reject all PoW blocks except BT2C genesis blocks
     const CBlock& blockRef = static_cast<const CBlock&>(block);
     if (blockRef.IsProofOfWork()) {
-        return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS, "pow-block", "proof of work blocks are not allowed in BT2C");
+        // BT2C FIX: Allow BT2C genesis blocks (hash-based detection)
+        bool isBT2CGenesis = (blockRef.GetHash().ToString() == "ac9cd70eb7f9edd2c6e7d0412cc95256478f49d7be9a334fcd4ef8469c2507c3" ||
+                             blockRef.GetHash().ToString() == "64bb5f57608163c2a0df5059a88f1aa607b515fa2ffd0ab390252836dd6b0ded" ||
+                             blockRef.GetHash().ToString() == "ee03fed33b1fde11b811713a753e597af63894cb01612bb5d01efa6fca2371e2");
+        
+        if (isBT2CGenesis) {
+            LogPrintf("BT2C DEBUG: BT2C genesis block detected in CheckBlockHeader - allowing as special case\n");
+        } else {
+            return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS, "pow-block", "proof of work blocks are not allowed in BT2C");
+        }
     }
     
     // Legacy check for compatibility with existing code
     if (fCheckPOW && static_cast<const CBlock&>(block).IsProofOfWork()) {
-        if (!CheckProofOfWork(block.GetHash(), block.nBits, consensusParams)) {
+        // BT2C FIX: Skip legacy PoW validation for BT2C genesis blocks (hash-based detection)
+        bool isBT2CGenesis = (block.GetHash().ToString() == "ac9cd70eb7f9edd2c6e7d0412cc95256478f49d7be9a334fcd4ef8469c2507c3" ||
+                             block.GetHash().ToString() == "64bb5f57608163c2a0df5059a88f1aa607b515fa2ffd0ab390252836dd6b0ded" ||
+                             block.GetHash().ToString() == "ee03fed33b1fde11b811713a753e597af63894cb01612bb5d01efa6fca2371e2");
+        
+        if (isBT2CGenesis) {
+            LogPrintf("BT2C DEBUG: BT2C genesis block detected in CheckBlockHeader legacy check - skipping PoW validation\n");
+        } else if (!CheckProofOfWork(block.GetHash(), block.nBits, consensusParams)) {
             return state.Invalid(BlockValidationResult::BLOCK_INVALID_HEADER, "high-hash", "proof of work failed");
         }
     }
@@ -3477,9 +3493,19 @@ bool CheckBlock(const CBlock& block, BlockValidationState& state, const Consensu
     if (!CheckBlockHeader(block, state, consensusParams, fCheckPOW && !block.IsProofOfStake()))
         return false;
         
-    // BT2C: Reject PoW blocks - we are phasing out PoW in favor of PoS
-    if (block.IsProofOfWork())
-        return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS, "pow-disabled", "proof of work is disabled in BT2C");
+    // BT2C: Reject PoW blocks - we are phasing out PoW in favor of PoS, except BT2C genesis blocks
+    if (block.IsProofOfWork()) {
+        // BT2C FIX: Allow BT2C genesis blocks (hash-based detection)
+        bool isBT2CGenesis = (block.GetHash().ToString() == "ac9cd70eb7f9edd2c6e7d0412cc95256478f49d7be9a334fcd4ef8469c2507c3" ||
+                             block.GetHash().ToString() == "64bb5f57608163c2a0df5059a88f1aa607b515fa2ffd0ab390252836dd6b0ded" ||
+                             block.GetHash().ToString() == "ee03fed33b1fde11b811713a753e597af63894cb01612bb5d01efa6fca2371e2");
+        
+        if (isBT2CGenesis) {
+            LogPrintf("BT2C DEBUG: BT2C genesis block detected in CheckBlock - allowing as special case\n");
+        } else {
+            return state.Invalid(BlockValidationResult::BLOCK_CONSENSUS, "pow-disabled", "proof of work is disabled in BT2C");
+        }
+    }
 
     // Signet only: check block solution
     if (consensusParams.signet_blocks && fCheckPOW && !CheckSignetBlockSolution(block, consensusParams)) {
