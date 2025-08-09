@@ -41,7 +41,7 @@ nav:
   - Whitepaper:
     - Bit2coin Whitepaper: whitepaper/bit2coin_whitepaper.md
   - Genesis:
-    - Parameters: genesis/genesis_params.yaml
+    - Parameters: genesis/params.md
   - Announcements:
     - Snapshot announcement: announcements/snapshot_announcement.md
 
