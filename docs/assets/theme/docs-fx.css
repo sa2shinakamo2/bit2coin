@@ -1,11 +1,19 @@
 /* Futuristic styling to align docs with landing */
 :root{
   --fx-grid: radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
+  --mx: 0; /* mouse x */
+  --my: 0; /* mouse y */
 }
 .md-typeset{scroll-behavior:smooth}
 /* Body + background grid */
 body{background-color:#0a0a0a}
 .md-main{background-image:var(--fx-grid);background-size:24px 24px}
+/* Aurora layers using pseudo-elements, influenced by mouse vars */
+.md-main::before,.md-main::after{content:"";position:fixed;inset:auto;left:0;right:0;z-index:0;pointer-events:none;filter:blur(60px);opacity:.55;transform:translate(calc(var(--mx)*14px),calc(var(--my)*10px));}
+.md-main::before{top:-10vh;height:40vh;background:radial-gradient(50% 60% at 10% 20%, rgba(99,102,241,.55), transparent 60%),radial-gradient(60% 50% at 80% 10%, rgba(96,165,250,.45), transparent 65%)}
+.md-main::after{bottom:-5vh;height:45vh;background:radial-gradient(50% 60% at 20% 80%, rgba(34,197,94,.35), transparent 60%),radial-gradient(60% 50% at 70% 90%, rgba(244,114,182,.35), transparent 65%)}
+/* Ensure content sits above aurora */
+.md-content,.md-sidebar,.md-header{position:relative;z-index:1}
 /* Gradient headings (apply to all levels) */
 .md-typeset h1,.md-typeset h2,.md-typeset h3,.md-typeset h4{
   background:linear-gradient(90deg,#93c5fd,#a78bfa,#f472b6);
@@ -22,3 +30,11 @@ body{background-color:#0a0a0a}
 .md-typeset pre>code{border-radius:10px}
 /* Header glass */
 .md-header{backdrop-filter:saturate(140%) blur(6px); background:rgba(10,10,10,.65)}
+/* Header sizing to match landing */
+.md-header__inner{padding-block:8px}
+.md-header__title{font-weight:800;letter-spacing:.2px}
+.md-header a,.md-tabs__link{color:#e5e7eb}
+.md-tabs{backdrop-filter:saturate(140%) blur(6px); background:transparent}
+.md-tabs__item{margin-inline:2px}
+.md-tabs__link:hover{color:#93c5fd}
+.md-tabs__link--active{color:#a78bfa}

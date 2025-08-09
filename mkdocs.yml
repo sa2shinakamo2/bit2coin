@@ -6,6 +6,7 @@ copyright: "© 2025 Bit2coin"
 
 theme:
   name: material
+  custom_dir: docs/overrides
   features:
     - navigation.top
     - navigation.tabs
@@ -67,3 +68,7 @@ extra:
 
 extra_css:
   - assets/theme/docs-fx.css
+  - landing/styles.css
+
+extra_javascript:
+  - assets/theme/docs-fx.js
