@@ -31,6 +31,12 @@ theme:
 
 nav:
   - Home: index.md
+  - Explorer:
+    - Overview: explorer/index.md
+    - Explorer: https://explorer.bt2c.net/
+    - Network: https://explorer.bt2c.net/network
+    - Top 500: https://explorer.bt2c.net/richlist
+    - API: https://explorer.bt2c.net/info
   - Launch:
     - Snapshot policy: launch/snapshot_policy.md
     - Snapshot day runbook: launch/snapshot_day.md
