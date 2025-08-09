@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 
 {% block content %}
-  {% include "partials/hero.html" %}
+  {% if page.is_homepage %}
+    {% include "partials/hero.html" %}
+  {% endif %}
   {{ super() }}
 {% endblock %}
