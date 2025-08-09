@@ -27,8 +27,6 @@ theme:
       toggle:
         icon: material/weather-sunny
         name: Switch to light mode
-  logo: assets/logo.svg
-  favicon: assets/logo.svg
 
 nav:
   - Home: index.md
