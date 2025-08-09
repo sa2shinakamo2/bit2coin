@@ -49,6 +49,27 @@ body{background-color:#0a0a0a}
 }
 .md-sidebar--secondary .md-nav{position:sticky; top:80px}
 .md-nav__title{color:#e5e7eb; font-weight:700; background:transparent !important; box-shadow:none !important}
+.md-sidebar--primary .md-nav__title,
+.md-sidebar--primary .md-nav__title[for],
+.md-sidebar--primary .md-nav__item--section > label.md-nav__link,
+.md-sidebar--primary .md-nav__item--section > .md-nav__link,
+.md-sidebar--primary .md-nav__item--section > .md-nav__link[for]{
+  background:transparent !important;
+  box-shadow:none !important;
+  color:#e5e7eb !important;
+}
+.md-sidebar--primary .md-nav__item--section > .md-nav__link:hover{background:rgba(147,197,253,.06)}
+.md-sidebar--primary .md-nav__item--section,
+.md-sidebar--primary .md-nav__item--section > .md-nav__link,
+.md-sidebar--primary .md-nav__item--section > label.md-nav__link{
+  background:transparent !important;
+  border-color:transparent !important;
+}
+.md-sidebar--primary .md-nav__item--section > .md-nav__link::before,
+.md-sidebar--primary .md-nav__item--section > .md-nav__link::after,
+.md-nav__title::before,
+.md-nav__title::after{background:transparent !important; box-shadow:none !important}
+.md-nav__link:focus{outline:none !important; box-shadow:none !important}
 .md-sidebar, .md-sidebar__scrollwrap, .md-sidebar__inner{background:transparent !important; box-shadow:none !important}
 .md-sidebar--primary .md-nav, .md-sidebar--secondary .md-nav, .md-nav, .md-nav__list{background:transparent !important}
 .md-nav__link{color:#cbd5e1; border-radius:8px; padding:6px 10px}
