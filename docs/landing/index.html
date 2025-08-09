@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bit2coin — Bitcoin feel, Proof‑of‑Stake security</title>
+  <meta name="description" content="Bit2coin: Bitcoin‑like UX with PoS, VRF proposer selection, BFT finality, reproducible BTC snapshot claims." />
+  <link rel="preload" href="/assets/logo.svg" as="image" />
+  <link rel="stylesheet" href="/landing/styles.css" />
+  <meta property="og:title" content="Bit2coin" />
+  <meta property="og:description" content="Bitcoin‑like UX with PoS, VRF, finality. Claim via BTC snapshot." />
+  <meta property="og:type" content="website" />
+  <meta name="theme-color" content="#0a0a0a" />
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <header class="container">
+    <a class="brand" href="/">
+      <img src="/assets/logo.svg" alt="Bit2coin" class="logo" />
+      <span class="wordmark">bit2coin</span>
+    </a>
+    <nav class="nav">
+      <a href="/whitepaper/bit2coin_whitepaper/">Whitepaper</a>
+      <a href="/launch/snapshot_policy/">Snapshot Policy</a>
+      <a href="/launch/snapshot_day/">Runbook</a>
+      <a href="/announcements/snapshot_announcement/">Announcement</a>
+      <a href="https://github.com/sa2shinakamo2/bit2coin" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+  </header>
+
+  <main class="container hero">
+    <h1 class="title">Bitcoin feel.<br/>Proof‑of‑Stake security.</h1>
+    <p class="subtitle">VRF‑based proposer selection, BFT finality, and audited BTC snapshot claims.
+      Keep your keys. Claim what’s yours.
+    </p>
+
+    <div class="cta">
+      <a class="btn primary" href="/announcements/snapshot_announcement/">Snapshot details</a>
+      <a class="btn" href="/whitepaper/bit2coin_whitepaper/">Read whitepaper</a>
+      <a class="btn ghost" href="https://github.com/sa2shinakamo2/bit2coin" target="_blank" rel="noreferrer">GitHub</a>
+    </div>
+
+    <div class="pillbar">
+      <div class="pill">Snapshot: 2025‑09‑03 16:00 UTC</div>
+      <div class="pill">Claim window: 15 months</div>
+      <div class="pill">HRP: b2c</div>
+    </div>
+  </main>
+
+  <section class="container features">
+    <div class="card">
+      <h3>Fair launch</h3>
+      <p>Public Bitcoin UTXO snapshot. Non‑custodial claims via domain‑separated message signing.</p>
+    </div>
+    <div class="card">
+      <h3>Finality + slashing</h3>
+      <p>BFT‑style finality over VRF‑selected blocks. Safety for honest validators; penalties for equivocation.</p>
+    </div>
+    <div class="card">
+      <h3>Reproducibility</h3>
+      <p>Open scripts to find the snapshot block and build the Merkle root. Verify everything yourself.</p>
+    </div>
+  </section>
+
+  <footer class="container footer">
+    <span>© 2025 Bit2coin</span>
+    <a href="/">Home</a>
+    <a href="/whitepaper/bit2coin_whitepaper/">Whitepaper</a>
+    <a href="/launch/treasury_policy/">Treasury</a>
+    <a href="/SECURITY/">Security</a>
+  </footer>
+</body>
+</html>
