@@ -1,5 +1,5 @@
 [build]
-  command = "python -m pip install --upgrade pip && python -m pip install -r requirements-docs.txt && python -m mkdocs build"
+  command = "python -m pip install --upgrade pip && python -m pip install mkdocs mkdocs-material && python -m mkdocs build"
   publish = "site"
 
 [build.environment]
@@ -22,3 +22,9 @@
     for = "/*"
     [context.deploy-preview.headers.values]
       X-Robots-Tag = "noindex, nofollow"
+
+[[redirects]]
+  from = "https://merry-donut-2152a4.netlify.app/*"
+  to = "https://bt2c.net/:splat"
+  status = 301
+  force = true
