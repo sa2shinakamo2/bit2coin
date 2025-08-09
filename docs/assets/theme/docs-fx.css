@@ -49,15 +49,20 @@ body{background-color:#0a0a0a}
 }
 .md-sidebar--secondary .md-nav{position:sticky; top:80px}
 .md-nav__title{color:#e5e7eb; font-weight:700; background:transparent !important; box-shadow:none !important}
-.md-sidebar--secondary .md-nav, .md-sidebar--primary .md-nav, .md-nav, .md-nav__list{background:transparent}
+.md-sidebar, .md-sidebar__scrollwrap, .md-sidebar__inner{background:transparent !important; box-shadow:none !important}
+.md-sidebar--primary .md-nav, .md-sidebar--secondary .md-nav, .md-nav, .md-nav__list{background:transparent !important}
 .md-nav__link{color:#cbd5e1; border-radius:8px; padding:6px 10px}
 .md-nav__link:hover{color:#93c5fd; background:rgba(147,197,253,.06)}
 /* unify visited/passed colors */
 .md-nav__link:visited{color:#cbd5e1}
 .md-nav__link--passed{color:#cbd5e1; background:transparent}
+/* normalize ancestor/parent highlight to avoid odd colors at bottom */
+.md-nav__item--active > .md-nav__link,
+.md-nav__item--active .md-nav__link--active,
+.md-nav__item .md-nav__link[data-md-state="active"],
+.md-nav__item .md-nav__link--active{color:#a78bfa !important; background:rgba(167,139,250,.08) !important}
 /* highlight only the active item */
 .md-nav__item--active > .md-nav__link{color:#a78bfa; background:rgba(167,139,250,.08)}
-.md-nav__link--active{color:#a78bfa !important; background:rgba(167,139,250,.08) !important}
 .md-nav__item--active > .md-nav__link{position:relative}
 .md-nav__item--active > .md-nav__link::before{
   content:""; position:absolute; left:0; top:6px; bottom:6px; width:3px;
