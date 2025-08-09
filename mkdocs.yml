@@ -40,6 +40,8 @@ nav:
   - Specs:
     - Consensus: consensus.md
     - Economics: economics.md
+  - Whitepaper:
+    - Bit2coin Whitepaper: whitepaper/bit2coin_whitepaper.md
   - Genesis:
     - Parameters: genesis/genesis_params.yaml
   - Announcements:
