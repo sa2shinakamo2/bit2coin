@@ -1,0 +1,30 @@
+# bit2coin genesis parameters (draft)
+chain_id: bit2c-mainnet-0
+block_time_seconds: 8
+warmup_period_days: 7
+unbonding_days: 21
+reward_split:
+  proposer: 0.1
+  attestors: 0.9
+slashing:
+  double_sign_percent: 0.015
+  surround_vote_percent: 0.0075
+  inactivity_leak_max_per_month_percent: 5
+randomness:
+  type: vrf
+  curve: secp256k1
+checkpoints:
+  cadence: weekly
+  publisher: foundation
+fees:
+  treasury_reward_fee_percent: 2
+  treasury_fee_sunset_months: 24
+supply:
+  model: btc_snapshot_with_founder_unclaimed_vesting
+  treasury_genesis_percent: 8
+  tail_emission_percent_per_year: 0
+founder_vesting:
+  address: <FOUNDER_VESTING_ADDRESS>
+  start_time: <GENESIS_TIME_UTC>
+  cliff_months: 12
+  total_months: 48

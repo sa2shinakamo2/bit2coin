@@ -1,0 +1,16 @@
+# Sensitive keys and secrets
+founder.priv
+*.priv
+*.key
+*.pem
+*.keystore
+*.wallet
+*.p12
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# macOS
+.DS_Store
