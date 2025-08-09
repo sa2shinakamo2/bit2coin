@@ -3,18 +3,22 @@
   --fx-grid: radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
 }
 .md-typeset{scroll-behavior:smooth}
-/* Background grid */
+/* Body + background grid */
+body{background-color:#0a0a0a}
 .md-main{background-image:var(--fx-grid);background-size:24px 24px}
-/* Gradient headings */
-.md-typeset h1 strong,.md-typeset h2 strong{background:linear-gradient(90deg,#93c5fd,#a78bfa,#f472b6);-webkit-background-clip:text;background-clip:text;color:transparent}
-/* Buttons & links hover */
+/* Gradient headings (apply to all levels) */
+.md-typeset h1,.md-typeset h2,.md-typeset h3,.md-typeset h4{
+  background:linear-gradient(90deg,#93c5fd,#a78bfa,#f472b6);
+  -webkit-background-clip:text;background-clip:text;color:transparent
+}
+/* Links */
 .md-typeset a{transition:color .2s ease}
 .md-typeset a:hover{color:#93c5fd}
-/* Card-like admonitions */
+/* Admonitions */
 .md-typeset .admonition{border-radius:12px;border:1px solid #222;background:#121212}
-/* Table styling */
+/* Tables */
 .md-typeset table{border:1px solid #222;border-radius:8px;overflow:hidden}
 /* Code blocks */
 .md-typeset pre>code{border-radius:10px}
-/* Top header transparency effect */
+/* Header glass */
 .md-header{backdrop-filter:saturate(140%) blur(6px); background:rgba(10,10,10,.65)}
