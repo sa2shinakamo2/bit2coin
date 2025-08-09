@@ -1,5 +1,5 @@
 [build]
-  command = "pip install -r requirements-docs.txt && mkdocs build"
+  command = "python -m pip install --upgrade pip && python -m pip install -r requirements-docs.txt && python -m mkdocs build"
   publish = "site"
 
 [build.environment]
