@@ -15,6 +15,7 @@ This repository contains the specifications and launch documents required to rea
 - `docs/consensus.md`
 - `docs/economics.md`
 - `docs/launch/snapshot_policy.md`
+- `docs/launch/snapshot_day.md`
 - `docs/launch/claim_spec_v1.md`
 - `docs/launch/treasury_policy.md`
 - `docs/genesis/genesis_params.yaml`
