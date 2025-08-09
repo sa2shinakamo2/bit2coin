@@ -8,7 +8,8 @@ html,body{height:100%}
 body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;line-height:1.6}
 
 .container{max-width:1200px;margin:0 auto;padding:0 20px}
-.header{display:flex;align-items:center;justify-content:space-between;padding:16px 0;position:relative;z-index:10;border-bottom:1px solid var(--border);background:var(--surface)}
+.header{padding:16px 0;position:relative;z-index:10;border-bottom:1px solid var(--border);background:var(--surface);width:100%}
+.header-inner{display:flex;align-items:center;justify-content:space-between}
 .brand{display:flex;align-items:center;gap:12px;color:var(--text);text-decoration:none}
 .wordmark{text-transform:lowercase;font-weight:800;letter-spacing:0.5px}
 .nav{display:flex;gap:18px}

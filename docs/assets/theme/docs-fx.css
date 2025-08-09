@@ -35,12 +35,15 @@ body{background-color:var(--surface-2); color:var(--text)}
 .md-header{backdrop-filter:none; background:var(--surface); border-bottom:1px solid var(--border)}
 .md-header__inner{padding-block:10px}
 .md-header__title{font-weight:800;letter-spacing:.2px}
-.md-header a,.md-tabs__link{color:var(--muted)}
+.md-header a,
+.md-header .md-tabs__link,
+.md-tabs__link{color:var(--muted) !important}
 .md-tabs{background:transparent}
 .md-tabs__item{margin-inline:2px}
 .md-tabs__link{position:relative}
-.md-tabs__link:hover{color:var(--green-600)}
-.md-tabs__link--active{color:var(--text)}
+.md-tabs__link:hover{color:var(--green-600) !important}
+.md-tabs__link:visited{color:var(--muted) !important}
+.md-tabs__link--active{color:var(--text) !important}
 .md-tabs__link--active::after{content:""; position:absolute; left:8px; right:8px; bottom:-6px; height:2px; background:var(--green-600); border-radius:2px}
 
 /* Sidebar (primary nav) and ToC (secondary) */
