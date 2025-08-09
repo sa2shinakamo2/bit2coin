@@ -42,6 +42,7 @@ nav:
     - Parameters: genesis/params.md
   - Announcements:
     - Snapshot announcement: announcements/snapshot_announcement.md
+  - Security: security.md
 
 markdown_extensions:
   - admonition
