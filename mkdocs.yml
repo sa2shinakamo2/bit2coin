@@ -61,3 +61,9 @@ extra:
     - icon: fontawesome/brands/github
       link: https://github.com/sa2shinakamo2/bit2coin
       name: GitHub
+  meta:
+    - property: og:image
+      content: /landing/og.svg
+
+extra_css:
+  - assets/theme/docs-fx.css

@@ -1,0 +1,20 @@
+/* Futuristic styling to align docs with landing */
+:root{
+  --fx-grid: radial-gradient(circle, rgba(255,255,255,0.05) 1px, transparent 1px);
+}
+.md-typeset{scroll-behavior:smooth}
+/* Background grid */
+.md-main{background-image:var(--fx-grid);background-size:24px 24px}
+/* Gradient headings */
+.md-typeset h1 strong,.md-typeset h2 strong{background:linear-gradient(90deg,#93c5fd,#a78bfa,#f472b6);-webkit-background-clip:text;background-clip:text;color:transparent}
+/* Buttons & links hover */
+.md-typeset a{transition:color .2s ease}
+.md-typeset a:hover{color:#93c5fd}
+/* Card-like admonitions */
+.md-typeset .admonition{border-radius:12px;border:1px solid #222;background:#121212}
+/* Table styling */
+.md-typeset table{border:1px solid #222;border-radius:8px;overflow:hidden}
+/* Code blocks */
+.md-typeset pre>code{border-radius:10px}
+/* Top header transparency effect */
+.md-header{backdrop-filter:saturate(140%) blur(6px); background:rgba(10,10,10,.65)}
