@@ -1,0 +1,21 @@
+{% set class = 'md-header' %}
+<header class="md-header" data-md-component="header">
+  <div class="md-header__inner md-grid">
+    <a href="/" class="brand"><span class="wordmark">bit2coin</span></a>
+    <nav class="nav">
+      <a href="/whitepaper/bit2coin_whitepaper/">Whitepaper</a>
+      <a href="/launch/snapshot_policy/">Snapshot Policy</a>
+      <a href="/launch/snapshot_day/">Runbook</a>
+      <a href="/announcements/snapshot_announcement/">Announcement</a>
+      <a href="https://github.com/sa2shinakamo2/bit2coin" target="_blank" rel="noreferrer">GitHub</a>
+    </nav>
+  </div>
+</header>
+<style>
+/* Align override header with landing styles */
+.brand .wordmark{font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji"; font-weight:800; font-size:18px; letter-spacing:.2px; text-transform:lowercase}
+.nav a{font-weight:600; color:#e5e7eb; text-decoration:none; margin-left:16px}
+.nav a:hover{color:#93c5fd}
+/* Layout */
+.md-header__inner{display:flex; align-items:center; justify-content:space-between; padding-block:10px}
+</style>
