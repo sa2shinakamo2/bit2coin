@@ -8,15 +8,20 @@
   <link rel="stylesheet" href="/landing/styles.css" />
   <meta property="og:title" content="Bit2coin" />
   <meta property="og:description" content="Bitcoin‑like UX with PoS, VRF, finality. Claim via BTC snapshot." />
+  <meta property="og:image" content="/landing/og.svg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:image" content="/landing/og.svg" />
   <meta property="og:type" content="website" />
   <meta name="theme-color" content="#0a0a0a" />
 </head>
 <body>
   <div class="bg-grid"></div>
-  <header class="container">
-    <a class="brand" href="/">
-      <span class="wordmark">bit2coin</span>
-    </a>
+  <div class="aurora aurora-a"></div>
+  <div class="aurora aurora-b"></div>
+  <div class="grain"></div>
+  <div class="scanlines"></div>
+  <header class="container header">
+    <a class="brand" href="/"><span class="wordmark">bit2coin</span></a>
     <nav class="nav">
       <a href="/whitepaper/bit2coin_whitepaper/">Whitepaper</a>
       <a href="/launch/snapshot_policy/">Snapshot Policy</a>
@@ -27,18 +32,24 @@
   </header>
 
   <main class="container hero">
-    <h1 class="title">Bitcoin feel.<br/>Proof‑of‑Stake security.</h1>
-    <p class="subtitle">VRF‑based proposer selection, BFT finality, and audited BTC snapshot claims.
-      Keep your keys. Claim what’s yours.
+    <div class="banner">Claim portal will open closer to the snapshot date. Stay tuned.</div>
+    <div class="eyebrow">Bitcoin‑like UX • VRF PoS • Finality</div>
+    <h1 class="title">
+      Bit2coin
+      <span class="gradient">Bitcoin feel. PoS security.</span>
+    </h1>
+    <p class="subtitle">
+      Energy‑efficient consensus with VRF proposer selection and BFT finality.
+      Claim your allocation from the Bitcoin snapshot — keep your keys.
     </p>
 
     <div class="cta">
-      <a class="btn primary" href="/announcements/snapshot_announcement/">Snapshot details</a>
-      <a class="btn" href="/whitepaper/bit2coin_whitepaper/">Read whitepaper</a>
+      <a class="btn primary glow" href="/announcements/snapshot_announcement/">Snapshot details</a>
+      <a class="btn glow" href="/whitepaper/bit2coin_whitepaper/">Read whitepaper</a>
       <a class="btn ghost" href="https://github.com/sa2shinakamo2/bit2coin" target="_blank" rel="noreferrer">GitHub</a>
     </div>
 
-    <div class="pillbar">
+    <div class="ticker">
       <div class="pill">Snapshot: 2025‑09‑03 16:00 UTC</div>
       <div class="pill">Claim window: 15 months</div>
       <div class="pill">HRP: b2c</div>
@@ -48,20 +59,35 @@
   <section class="container features">
     <div class="card">
       <h3>Fair launch</h3>
-      <p>Public Bitcoin UTXO snapshot. Non‑custodial claims via domain‑separated message signing.</p>
+      <p>Public Bitcoin UTXO snapshot. Non‑custodial claims with domain‑separated message signing.</p>
     </div>
     <div class="card">
       <h3>Finality + slashing</h3>
-      <p>BFT‑style finality over VRF‑selected blocks. Safety for honest validators; penalties for equivocation.</p>
+      <p>BFT‑style finality over VRF‑selected blocks. Strong safety and accountable security.</p>
     </div>
     <div class="card">
       <h3>Reproducibility</h3>
-      <p>Open scripts to find the snapshot block and build the Merkle root. Verify everything yourself.</p>
+      <p>Open scripts to find the snapshot block and build the Merkle root. Verify it yourself.</p>
     </div>
   </section>
 
+  <script>
+    // Subtle mouse parallax for aurora
+    (function(){
+      const a = document.querySelector('.aurora-a');
+      const b = document.querySelector('.aurora-b');
+      if(!a || !b) return;
+      window.addEventListener('mousemove', (e) => {
+        const x = (e.clientX / window.innerWidth - 0.5);
+        const y = (e.clientY / window.innerHeight - 0.5);
+        a.style.transform = `translate(${x * 20}px, ${y * 12}px)`;
+        b.style.transform = `translate(${x * -18}px, ${y * -10}px)`;
+      });
+    })();
+  </script>
+
   <footer class="container footer">
-    <span>© 2025 Bit2coin</span>
+    <span> 2025 Bit2coin</span>
     <a href="/">Home</a>
     <a href="/whitepaper/bit2coin_whitepaper/">Whitepaper</a>
     <a href="/launch/treasury_policy/">Treasury</a>

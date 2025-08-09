@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0a0a0a"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+    <linearGradient id="t" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#93c5fd"/>
+      <stop offset="50%" stop-color="#a78bfa"/>
+      <stop offset="100%" stop-color="#f472b6"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#g)"/>
+  <g opacity="0.35" filter="url(#f)">
+    <defs>
+      <filter id="f"><feGaussianBlur in="SourceGraphic" stdDeviation="50"/></filter>
+    </defs>
+    <circle cx="150" cy="100" r="220" fill="#6366f1"/>
+    <circle cx="1100" cy="580" r="220" fill="#22c55e"/>
+    <circle cx="900" cy="120" r="260" fill="#60a5fa"/>
+  </g>
+  <text x="80" y="240" font-family="Inter, Arial, Helvetica, sans-serif" font-weight="800" font-size="96" fill="#e5e7eb">Bit2coin</text>
+  <text x="80" y="330" font-family="Inter, Arial, Helvetica, sans-serif" font-weight="700" font-size="48" fill="url(#t)">Bitcoin feel. PoS security.</text>
+  <text x="80" y="400" font-family="Inter, Arial, Helvetica, sans-serif" font-weight="500" font-size="28" fill="#cbd5e1">
+    VRF proposer selection • BFT finality • Reproducible BTC snapshot claims
+  </text>
+  <text x="80" y="470" font-family="Inter, Arial, Helvetica, sans-serif" font-weight="600" font-size="24" fill="#e5e7eb">
+    Snapshot: 2025-09-03 16:00 UTC • HRP: b2c
+  </text>
+</svg>
