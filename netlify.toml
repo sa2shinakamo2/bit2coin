@@ -28,3 +28,44 @@
   to = "https://bt2c.net/:splat"
   status = 301
   force = true
+
+# Clean slugs for key docs pages
+[[redirects]]
+  from = "/whitepaper"
+  to = "/whitepaper/bit2coin_whitepaper/"
+  status = 301
+
+[[redirects]]
+  from = "/snapshot"
+  to = "/launch/snapshot_policy/"
+  status = 301
+
+[[redirects]]
+  from = "/runbook"
+  to = "/launch/snapshot_day/"
+  status = 301
+
+[[redirects]]
+  from = "/announcement"
+  to = "/announcements/snapshot_announcement/"
+  status = 301
+
+[[redirects]]
+  from = "/treasury"
+  to = "/launch/treasury_policy/"
+  status = 301
+
+[[redirects]]
+  from = "/security"
+  to = "/SECURITY/"
+  status = 301
+
+[[redirects]]
+  from = "/explorer"
+  to = "/explorer/"
+  status = 301
+
+[[redirects]]
+  from = "/genesis"
+  to = "/genesis/params/"
+  status = 301
