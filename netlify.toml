@@ -9,3 +9,10 @@
   from = "/"
   to = "/landing/index.html"
   status = 200
+  force = true
+
+[[redirects]]
+  from = "/index.html"
+  to = "/landing/index.html"
+  status = 200
+  force = true
