@@ -1,0 +1,43 @@
+site_name: Bit2coin
+site_description: Bitcoin feel, PoS security with VRF proposer selection, BFT finality, and audited BTC snapshot. Snapshot claims for BTC holders.
+site_url: https://bt2c.net
+repo_url: https://github.com/sa2shinakamo2/bit2coin
+copyright: "© 2025 Bit2coin"
+
+theme:
+  name: material
+  features:
+    - navigation.top
+    - navigation.tracking
+    - content.code.copy
+    - toc.integrate
+  palette:
+    - scheme: default
+      primary: blue
+      accent: blue
+
+nav:
+  - Home: index.md
+  - Launch:
+    - Snapshot policy: launch/snapshot_policy.md
+    - Snapshot day runbook: launch/snapshot_day.md
+    - Claim spec v1: launch/claim_spec_v1.md
+    - Treasury policy: launch/treasury_policy.md
+  - Specs:
+    - Consensus: consensus.md
+    - Economics: economics.md
+  - Genesis:
+    - Parameters: genesis/genesis_params.yaml
+  - Announcements:
+    - Snapshot announcement: announcements/snapshot_announcement.md
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+  - tables
+  - fenced_code
+  - codehilite
+
+plugins:
+  - search
